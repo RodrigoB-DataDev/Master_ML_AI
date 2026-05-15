@@ -1,5 +1,5 @@
 import streamlit as st
-import google.generativeai as genai
+from groq import Groq
 import os
 
 # ── Page config ────────────────────────────────────────────────────────────────
@@ -41,32 +41,35 @@ EXAMPLE_R = (
 )
 EXAMPLE_T = "La tecnología avanza más rápido de lo que podemos adaptarnos, pero eso siempre ha sido así a lo largo de la historia."
 
-# ── Session state para los ejemplos (fix del bug) ──────────────────────────────
-if "s_input" not in st.session_state:
-    st.session_state["s_input"] = ""
-if "r_input" not in st.session_state:
-    st.session_state["r_input"] = ""
-if "t_input" not in st.session_state:
-    st.session_state["t_input"] = ""
+# ── Session state ──────────────────────────────────────────────────────────────
+for key in ["s_input", "r_input", "t_input"]:
+    if key not in st.session_state:
+        st.session_state[key] = ""
 
-# ── Gemini setup ───────────────────────────────────────────────────────────────
-def call_gemini(system: str, user: str) -> str:
-    """Configure Gemini and return generated text."""
-    api_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
+# ── Groq client ────────────────────────────────────────────────────────────────
+def call_groq(system: str, user: str) -> str:
+    """Call Groq API and return the response text."""
+    api_key = st.secrets.get("GROQ_API_KEY", os.environ.get("GROQ_API_KEY", ""))
     if not api_key:
-        st.error("⚠️ No se encontró GEMINI_API_KEY. Añádela en los secrets de Streamlit.")
+        st.error("⚠️ No se encontró GROQ_API_KEY. Añádela en los secrets de Streamlit.")
         st.stop()
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-2.0-flash")
-    prompt = f"{system}\n\nTexto:\n{user}"
-    response = model.generate_content(prompt)
-    return response.text
+    client = Groq(api_key=api_key)
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ],
+        max_tokens=1024,
+        temperature=0.7,
+    )
+    return response.choices[0].message.content
 
 # ── Header ─────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="app-header">
   <h1>🧠 AI Toolkit</h1>
-  <p>Análisis · Resumen · Traducción — powered by Gemini</p>
+  <p>Análisis · Resumen · Traducción — powered by Groq</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -78,9 +81,9 @@ with tab1:
     st.markdown("### Análisis de Sentimiento")
     st.caption("Detecta el tono emocional de cualquier texto — reseñas, tweets, feedback, etc.")
 
-    # Botón ejemplo ANTES del text_area para que session_state ya esté actualizado
     if st.button("Usar ejemplo →", key="ex_s"):
         st.session_state["s_input"] = EXAMPLE_S
+        st.rerun()
 
     text_s = st.text_area(
         "TEXTO A ANALIZAR",
@@ -104,7 +107,7 @@ with tab1:
                     "Responde en el mismo idioma que el texto."
                 )
                 try:
-                    result = call_gemini(system_s, text_s)
+                    result = call_groq(system_s, text_s)
                     st.markdown(f'<div class="result-box">{result}</div>', unsafe_allow_html=True)
                 except Exception as e:
                     st.error(f"Error al llamar a la API: {e}")
@@ -116,6 +119,7 @@ with tab2:
 
     if st.button("Usar ejemplo →", key="ex_r"):
         st.session_state["r_input"] = EXAMPLE_R
+        st.rerun()
 
     text_r = st.text_area(
         "TEXTO A RESUMIR",
@@ -148,7 +152,7 @@ with tab2:
                     f"Responde en el mismo idioma que el texto."
                 )
                 try:
-                    result = call_gemini(system_r, text_r)
+                    result = call_groq(system_r, text_r)
                     st.markdown(f'<div class="result-box">{result}</div>', unsafe_allow_html=True)
                 except Exception as e:
                     st.error(f"Error al llamar a la API: {e}")
@@ -165,6 +169,7 @@ with tab3:
 
     if st.button("Usar ejemplo →", key="ex_t"):
         st.session_state["t_input"] = EXAMPLE_T
+        st.rerun()
 
     text_t = st.text_area(
         "TEXTO A TRADUCIR",
@@ -204,7 +209,7 @@ with tab3:
                     f"Adapta expresiones idiomáticas para que suenen naturales en el idioma destino."
                 )
                 try:
-                    result = call_gemini(system_t, text_t)
+                    result = call_groq(system_t, text_t)
                     st.markdown(f'<div class="result-box">{result}</div>', unsafe_allow_html=True)
                 except Exception as e:
                     st.error(f"Error al llamar a la API: {e}")
@@ -213,7 +218,7 @@ with tab3:
 st.markdown("---")
 st.markdown(
     "<p style='text-align:center; color:#444; font-size:0.75rem; letter-spacing:1px;'>"
-    "POWERED BY GEMINI · GOOGLE AI · STREAMLIT"
+    "POWERED BY GROQ · LLAMA 3.3 · STREAMLIT"
     "</p>",
     unsafe_allow_html=True,
 )
