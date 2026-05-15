@@ -31,6 +31,24 @@ label { color: #aaa !important; font-size: 0.78rem !important; letter-spacing: 1
 </style>
 """, unsafe_allow_html=True)
 
+# ── Ejemplos ───────────────────────────────────────────────────────────────────
+EXAMPLE_S = "La película estuvo increíble, los actores hicieron un trabajo excepcional aunque el final me dejó un poco confundido."
+EXAMPLE_R = (
+    "La inteligencia artificial generativa ha transformado múltiples industrias. "
+    "Los modelos de lenguaje grande han demostrado capacidades sorprendentes pero también "
+    "plantean desafíos: desinformación, sesgos, impacto en el empleo. Los gobiernos de todo "
+    "el mundo trabajan en marcos regulatorios para equilibrar la innovación con la seguridad."
+)
+EXAMPLE_T = "La tecnología avanza más rápido de lo que podemos adaptarnos, pero eso siempre ha sido así a lo largo de la historia."
+
+# ── Session state para los ejemplos (fix del bug) ──────────────────────────────
+if "s_input" not in st.session_state:
+    st.session_state["s_input"] = ""
+if "r_input" not in st.session_state:
+    st.session_state["r_input"] = ""
+if "t_input" not in st.session_state:
+    st.session_state["t_input"] = ""
+
 # ── Gemini setup ───────────────────────────────────────────────────────────────
 def call_gemini(system: str, user: str) -> str:
     """Configure Gemini and return generated text."""
@@ -43,7 +61,6 @@ def call_gemini(system: str, user: str) -> str:
     prompt = f"{system}\n\nTexto:\n{user}"
     response = model.generate_content(prompt)
     return response.text
-
 
 # ── Header ─────────────────────────────────────────────────────────────────────
 st.markdown("""
@@ -61,23 +78,18 @@ with tab1:
     st.markdown("### Análisis de Sentimiento")
     st.caption("Detecta el tono emocional de cualquier texto — reseñas, tweets, feedback, etc.")
 
-    example_s = "La película estuvo increíble, los actores hicieron un trabajo excepcional aunque el final me dejó un poco confundido."
+    # Botón ejemplo ANTES del text_area para que session_state ya esté actualizado
+    if st.button("Usar ejemplo →", key="ex_s"):
+        st.session_state["s_input"] = EXAMPLE_S
 
     text_s = st.text_area(
         "TEXTO A ANALIZAR",
-        placeholder=f"Ejemplo: {example_s}",
+        placeholder=f"Ejemplo: {EXAMPLE_S}",
         height=160,
         key="s_input",
     )
 
-    c1, c2 = st.columns([1, 3])
-    with c1:
-        btn_s = st.button("Analizar", key="btn_s")
-    with c2:
-        if st.button("Usar ejemplo →", key="ex_s"):
-            text_s = example_s
-
-    if btn_s:
+    if st.button("Analizar", key="btn_s"):
         if not text_s.strip():
             st.warning("Escribe o pega algún texto primero.")
         else:
@@ -102,12 +114,8 @@ with tab2:
     st.markdown("### Resumidor de Textos")
     st.caption("Condensa artículos, informes o cualquier texto largo en su esencia.")
 
-    example_r = (
-        "La inteligencia artificial generativa ha transformado múltiples industrias. "
-        "Los modelos de lenguaje grande han demostrado capacidades sorprendentes pero también "
-        "plantean desafíos: desinformación, sesgos, impacto en el empleo. Los gobiernos de todo "
-        "el mundo trabajan en marcos regulatorios para equilibrar la innovación con la seguridad."
-    )
+    if st.button("Usar ejemplo →", key="ex_r"):
+        st.session_state["r_input"] = EXAMPLE_R
 
     text_r = st.text_area(
         "TEXTO A RESUMIR",
@@ -122,14 +130,7 @@ with tab2:
         key="r_len",
     )
 
-    c1, c2 = st.columns([1, 3])
-    with c1:
-        btn_r = st.button("Resumir", key="btn_r")
-    with c2:
-        if st.button("Usar ejemplo →", key="ex_r"):
-            text_r = example_r
-
-    if btn_r:
+    if st.button("Resumir", key="btn_r"):
         if not text_r.strip():
             st.warning("Escribe o pega algún texto primero.")
         else:
@@ -162,7 +163,8 @@ with tab3:
         "Chino (simplificado)", "Japonés", "Árabe", "Ruso", "Coreano", "Hindi",
     ]
 
-    example_t = "La tecnología avanza más rápido de lo que podemos adaptarnos, pero eso siempre ha sido así a lo largo de la historia."
+    if st.button("Usar ejemplo →", key="ex_t"):
+        st.session_state["t_input"] = EXAMPLE_T
 
     text_t = st.text_area(
         "TEXTO A TRADUCIR",
@@ -183,14 +185,7 @@ with tab3:
         key="tone",
     )
 
-    c1, c2 = st.columns([1, 3])
-    with c1:
-        btn_t = st.button("Traducir", key="btn_t")
-    with c2:
-        if st.button("Usar ejemplo →", key="ex_t"):
-            text_t = example_t
-
-    if btn_t:
+    if st.button("Traducir", key="btn_t"):
         if not text_t.strip():
             st.warning("Escribe o pega algún texto primero.")
         else:
