@@ -49,9 +49,9 @@ for key in ["s_input", "r_input", "t_input"]:
 # ── Groq client ────────────────────────────────────────────────────────────────
 def call_groq(system: str, user: str) -> str:
     """Call Groq API and return the response text."""
-    api_key = st.secrets.get("GROQ_API_KEY", os.environ.get("GROQ_API_KEY", ""))
+    api_key = st.secrets.get("AppKey", os.environ.get("AppKey", ""))
     if not api_key:
-        st.error("⚠️ No se encontró GROQ_API_KEY. Añádela en los secrets de Streamlit.")
+        st.error("⚠️ No se encontró AppKey. Añádela en los secrets de Streamlit.")
         st.stop()
     client = Groq(api_key=api_key)
     response = client.chat.completions.create(
